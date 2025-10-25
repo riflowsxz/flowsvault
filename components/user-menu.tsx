@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 import { useLanguage } from '@/lib/i18n/context';
 import { useTheme } from 'next-themes';
@@ -25,7 +25,8 @@ import { User, LogOut, Camera, UserX, Sun, Moon, Key } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { validateImage } from '@/lib/image-upload';
-import { ApiKeysModal } from '@/components/ApiKeysModal';
+
+const ApiKeysModal = lazy(() => import('@/components/ApiKeysModal').then(mod => ({ default: mod.ApiKeysModal })));
 
 export function UserMenu() {
   const { data: session, status, update } = useSession();
@@ -34,20 +35,12 @@ export function UserMenu() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showApiKeysModal, setShowApiKeysModal] = useState(false);
 
-  if (status === 'loading') {
-    return null;
-  }
-
-  if (status === 'unauthenticated') {
-    return null;
-  }
-
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     await signOut({ redirect: false });
     window.location.reload();
-  };
+  }, []);
 
-  const handleUpdatePicture = async () => {
+  const handleUpdatePicture = useCallback(async () => {
     try {
       const input = document.createElement('input');
       input.type = 'file';
@@ -111,9 +104,9 @@ export function UserMenu() {
       console.error('Error handling profile picture update:', error);
       toast.error('Failed to update profile picture');
     }
-  };
+  }, [session, t, update]);
 
-  const handleDeleteAccountConfirm = async () => {
+  const handleDeleteAccountConfirm = useCallback(async () => {
     setShowDeleteDialog(false);
     try {
       const response = await fetch('/api/profile/delete', {
@@ -141,7 +134,15 @@ export function UserMenu() {
       console.error('Error deleting account:', error);
       toast.error(t('accountDeleteFailed'));
     }
-  };
+  }, [t]);
+
+  if (status === 'loading') {
+    return null;
+  }
+
+  if (status === 'unauthenticated') {
+    return null;
+  }
 
   return (
     <>
@@ -150,7 +151,7 @@ export function UserMenu() {
         <Button 
           variant="outline" 
           size="icon" 
-          className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 lg:h-10 lg:w-10 hover:bg-primary/10 transition-colors duration-200 rounded-lg border-primary/20 hover:border-primary/40 p-0 overflow-hidden"
+          className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 lg:h-10 lg:w-10 hover:bg-primary/10 rounded-lg border-primary/20 hover:border-primary/40 p-0 overflow-hidden"
           title={session?.user?.name || session?.user?.email || 'User'}
         >
           {session?.user?.image ? (
@@ -220,12 +221,12 @@ export function UserMenu() {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="pt-3">
-          <AlertDialogCancel className="w-full sm:flex-1 h-9 text-sm animate-in fade-in-0 slide-in-from-bottom-3 duration-400 delay-75 ease-out">
+          <AlertDialogCancel className="w-full sm:flex-1 h-9 text-sm">
             {t('cancel')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDeleteAccountConfirm}
-            className="w-full sm:flex-1 h-9 text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors animate-in fade-in-0 slide-in-from-bottom-3 duration-400 delay-150 ease-out"
+            className="w-full sm:flex-1 h-9 text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {t('delete')}
           </AlertDialogAction>
@@ -233,7 +234,11 @@ export function UserMenu() {
       </AlertDialogContent>
     </AlertDialog>
 
-    <ApiKeysModal open={showApiKeysModal} onOpenChange={setShowApiKeysModal} />
+    <Suspense fallback={null}>
+      {showApiKeysModal && (
+        <ApiKeysModal open={showApiKeysModal} onOpenChange={setShowApiKeysModal} />
+      )}
+    </Suspense>
     </>
   );
 }

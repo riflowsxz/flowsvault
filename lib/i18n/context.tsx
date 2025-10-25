@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from 'react';
 import { translations, type Language } from './translations';
 
 interface LanguageContextType {
@@ -12,31 +12,29 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('en');
-
-  useEffect(() => {
+  const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window === 'undefined') return 'en';
     const savedLanguage = localStorage.getItem('language') as Language;
     if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'id')) {
-      setLanguageState(savedLanguage);
-    } else {
-      const browserLang = navigator.language.toLowerCase();
-      if (browserLang.startsWith('id')) {
-        setLanguageState('id');
-      }
+      return savedLanguage;
     }
-  }, []);
+    const browserLang = navigator.language.toLowerCase();
+    return browserLang.startsWith('id') ? 'id' : 'en';
+  });
 
-  const setLanguage = (lang: Language) => {
+  const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('language', lang);
-  };
+  }, []);
 
-  const t = (key: keyof typeof translations.en): string => {
+  const t = useCallback((key: keyof typeof translations.en): string => {
     return translations[language][key];
-  };
+  }, [language]);
+
+  const value = useMemo(() => ({ language, setLanguage, t }), [language, setLanguage, t]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );

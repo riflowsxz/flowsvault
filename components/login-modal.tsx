@@ -54,10 +54,10 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="sm:max-w-md w-[95vw] max-w-sm rounded-xl p-6 duration-300 data-[state=closed]:duration-200 animate-in fade-in-80 zoom-in-90 slide-in-from-bottom-4 data-[state=closed]:animate-out data-[state=closed]:fade-out-50 data-[state=closed]:zoom-out-80 data-[state=closed]:slide-out-to-bottom-4"
+        className="sm:max-w-md w-[95vw] max-w-sm rounded-xl p-6"
         aria-describedby="login-modal-description"
       >
-        <DialogHeader className="text-center animate-in fade-in-80 slide-in-from-top-2 duration-300">
+        <DialogHeader className="text-center">
           <DialogTitle className="text-xl font-semibold">Sign in to your account</DialogTitle>
           <DialogDescription id="login-modal-description" className="text-sm text-muted-foreground">
             Choose a provider to sign in or register
@@ -67,7 +67,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
           <Button
             variant="outline"
             onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-2 py-5 animate-in fade-in-75 slide-in-from-bottom-2 duration-300 animate-duration-500"
+            className="w-full flex items-center justify-center gap-2 py-5"
           >
             <FcGoogle className="h-5 w-5" />
             Sign in with google
@@ -75,7 +75,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
           <Button
             variant="outline"
             onClick={handleGitHubLogin}
-            className="w-full flex items-center justify-center gap-2 py-5 animate-in fade-in-75 slide-in-from-bottom-2 duration-300 animate-duration-500 animate-delay-100"
+            className="w-full flex items-center justify-center gap-2 py-5"
           >
             <FaGithub className="h-5 w-5" />
             Sign in with github

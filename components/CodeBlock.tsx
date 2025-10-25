@@ -25,7 +25,7 @@ export function CodeBlock({ code, language }: CodeBlockProps) {
           variant="ghost"
           size="icon"
           onClick={handleCopy}
-          className="h-7 w-7 sm:h-8 sm:w-8 bg-background/80 backdrop-blur-sm hover:bg-background/95 border border-border/40 shadow-sm opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 hover:scale-105"
+          className="h-7 w-7 sm:h-8 sm:w-8 bg-background hover:bg-background/95 border border-border opacity-80 sm:opacity-0 sm:group-hover:opacity-100"
           title={copied ? "Copied!" : "Copy code"}
         >
           {copied ? (

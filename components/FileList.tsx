@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useState, useCallback, useMemo } from 'react';
 
 import { FileText, Search, Download, Eye, Trash2, Image as ImageIcon, Archive, FolderOpen, Copy, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,36 +31,35 @@ interface FileListProps {
   uploadClient: FileUploadClient;
 }
 
-const FileIcon = memo(({ mimeType }: { mimeType: string }) => {
-  if (mimeType.startsWith('image/')) return <ImageIcon className="h-5 w-5" />;
-  if (mimeType.includes('pdf')) return <FileText className="h-5 w-5" />;
-  if (mimeType.includes('zip') || mimeType.includes('archive')) return <Archive className="h-5 w-5" />;
-  return <FileText className="h-5 w-5" />;
-});
-FileIcon.displayName = 'FileIcon';
+const getFileIcon = (mimeType: string) => {
+  if (mimeType.startsWith('image/')) return ImageIcon;
+  if (mimeType.includes('pdf')) return FileText;
+  if (mimeType.includes('zip') || mimeType.includes('archive')) return Archive;
+  return FileText;
+};
 
 const FileItem = memo(({ file, onDeleteFile, uploadClient }: { file: UploadedFile; onDeleteFile: (id: string) => Promise<void>; uploadClient: FileUploadClient }) => {
   const { t } = useLanguage();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
-  const handleDownload = async () => {
+  const handleDownload = useCallback(async () => {
     const success = await uploadClient.downloadFile(file.fileName, file.originalName);
     if (!success) {
       toast.error(t('downloadFailed'), { description: t('downloadFailedDesc') });
     }
-  };
+  }, [uploadClient, file.fileName, file.originalName, t]);
   
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = useCallback(async () => {
     await onDeleteFile(file.id);
     setShowDeleteDialog(false);
-  };
+  }, [onDeleteFile, file.id]);
 
-  const handlePreview = () => {
+  const handlePreview = useCallback(() => {
     const previewUrl = `/api/preview/${encodeURIComponent(file.id)}`;
     window.open(previewUrl, '_blank');
-  };
+  }, [file.id]);
 
-  const handleCopyLink = async () => {
+  const handleCopyLink = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(file.downloadUrl);
       toast.success(t('linkCopied'));
@@ -68,7 +67,7 @@ const FileItem = memo(({ file, onDeleteFile, uploadClient }: { file: UploadedFil
       console.error('Failed to copy download link:', error);
       toast.error(t('unableToCopy'));
     }
-  };
+  }, [file.downloadUrl, t]);
 
   const getTimeLeft = (expiresAt: string | null) => {
     if (!expiresAt) return t('neverExpires');
@@ -94,11 +93,13 @@ const FileItem = memo(({ file, onDeleteFile, uploadClient }: { file: UploadedFil
   const expiresLabel = getTimeLeft(file.expiresAt);
   const isExpired = expiresLabel === 'Expired';
 
+  const IconComponent = useMemo(() => getFileIcon(file.mimeType), [file.mimeType]);
+
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all duration-300 hover:shadow-sm">
+    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">
       <div className="flex items-start gap-3">
         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg border bg-muted text-primary">
-          <FileIcon mimeType={file.mimeType} />
+          <IconComponent className="h-5 w-5" />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -177,12 +178,12 @@ const FileItem = memo(({ file, onDeleteFile, uploadClient }: { file: UploadedFil
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="pt-3">
-            <AlertDialogCancel className="w-full sm:flex-1 h-9 text-sm animate-in fade-in-0 slide-in-from-bottom-3 duration-400 delay-75 ease-out">
+            <AlertDialogCancel className="w-full sm:flex-1 h-9 text-sm">
               {t('cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              className="w-full sm:flex-1 h-9 text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors animate-in fade-in-0 slide-in-from-bottom-3 duration-400 delay-150 ease-out"
+              className="w-full sm:flex-1 h-9 text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {t('delete')}
             </AlertDialogAction>
@@ -200,7 +201,7 @@ export const FileList = memo(({ files, onDeleteFile, searchQuery, setSearchQuery
   const { t } = useLanguage();
   
   return (
-    <section className="rounded-2xl border bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-md">
+    <section className="rounded-2xl border bg-card p-6">
       <div className="space-y-6">
         <div className="flex flex-col gap-4 rounded-lg border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1">

@@ -33,7 +33,7 @@ export const LanguageSwitcher = memo(() => {
         <Button
           variant="outline"
           size="icon"
-          className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 lg:h-10 lg:w-10 hover:bg-primary/10 transition-colors duration-200 rounded-lg border-primary/20 hover:border-primary/40"
+          className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 lg:h-10 lg:w-10 hover:bg-primary/10 rounded-lg border-primary/20 hover:border-primary/40"
           title="Change Language"
         >
           <Languages className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 lg:h-5 lg:w-5" />

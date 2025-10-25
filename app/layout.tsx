@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import Script from 'next/script';
 import { ThemeProvider } from '@/components/theme-provider';
 import { SessionProvider } from '@/components/session-provider';
 import ErrorBoundary from '@/components/error-boundary';
@@ -16,17 +15,7 @@ export const metadata: Metadata = {
     template: '%s | Flowsvault'
   },
   description: 'Flowsvault layanan upload file.',
-  keywords: [
-    'layanan upload file aman', 
-    'penyimpanan file terenkripsi', 
-    'file hosting aman',
-        'bagikan file secara aman',
-    'cloud storage enterprise',
-    'file sharing secure',
-    'upload file gratis',
-    'simpan file online',
-    'backup file aman'
-  ],
+  keywords: ['layanan upload file aman', 'penyimpanan file terenkripsi', 'file hosting aman', 'bagikan file secara aman'],
   authors: [{ name: 'Flowsvault team', url: 'https://apps.riflowsxz.my.id' }],
   creator: 'Flowsvault',
   publisher: 'Flowsvault',
@@ -115,130 +104,25 @@ export default function RootLayout({
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link rel="dns-prefetch" href="//cdnjs.cloudflare.com" />
-        <link rel="icon" type="image/svg+xml" href="/favicon-16x16.svg" sizes="16x16" />
-        <link rel="icon" type="image/svg+xml" href="/favicon-32x32.svg" sizes="32x32" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
-        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#3b82f6" />
-        <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
-        <meta httpEquiv="X-Frame-Options" content="DENY" />
-        <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
-        <meta httpEquiv="X-Referrer-Policy" content="strict-origin-when-cross-origin" />
+
+
+
         <meta name="application-name" content="Flowsvault" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Flowsvault" />
-        <meta name="format-detection" content="telephone=no" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-config" content="/browserconfig.xml" />
-        <meta name="msapplication-TileColor" content="#3b82f6" />
-        <meta name="msapplication-tap-highlight" content="no" />
         <meta name="theme-color" content="#ffffff" />
         <link rel="manifest" href="/site.webmanifest" />
-        <Script id="website-structured-data" type="application/ld+json" strategy="afterInteractive">
-          {JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'WebSite',
-            name: 'Flowsvault',
-            description: 'Layanan upload file profesional dengan keamanan tingkat perusahaan dan fitur berbagi canggih.',
-            url: siteUrl,
-            potentialAction: {
-              '@type': 'SearchAction',
-              target: `${siteUrl}/search?q={search_term_string}`,
-              'query-input': 'required name=search_term_string'
-            }
-          })}
-        </Script>
-        <Script id="organization-structured-data" type="application/ld+json" strategy="afterInteractive">
-          {JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'Organization',
-            name: 'Flowsvault',
-            legalName: 'Flowsvault',
-            url: siteUrl,
-            logo: `${siteUrl}/logo.png`,
-            foundingDate: '2024',
-            description: 'Layanan upload file.',
-            address: {
-              '@type': 'PostalAddress',
-              streetAddress: 'Yogyakarta',
-              addressLocality: 'Yogyakarta',
-              addressRegion: 'Yogyakarta',
-              postalCode: '55861',
-              addressCountry: 'ID'
-            },
-            contactPoint: [
-              {
-                '@type': 'ContactPoint',
-                telephone: '+62-852-2634-4606',
-                contactType: 'customer service',
-                areaServed: 'ID',
-                availableLanguage: ['Indonesian', 'English']
-              }
-            ],
-            sameAs: [
-              'https://www.facebook.com/flowsvault',
-              'https://www.twitter.com/flowsvault',
-              'https://www.instagram.com/flowsvault',
-              'https://www.linkedin.com/company/flowsvault'
-            ]
-          })}
-        </Script>
-        <Script id="breadcrumb-structured-data" type="application/ld+json" strategy="afterInteractive">
-          {JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              {
-                '@type': 'ListItem',
-                position: 1,
-                name: 'Beranda',
-                item: siteUrl
-              },
-              {
-                '@type': 'ListItem',
-                position: 2,
-                name: 'Upload',
-                item: `${siteUrl}/upload`
-              },
-              {
-                '@type': 'ListItem',
-                position: 3,
-                name: 'Dashboard',
-                item: `${siteUrl}/dashboard`
-              },
-              {
-                '@type': 'ListItem',
-                position: 4,
-                name: 'Tentang',
-                item: `${siteUrl}/about`
-              }
-            ]
-          })}
-        </Script>
-        {gaMeasurementId ? (
-          <>
-            <script
-              async
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
-            />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', '${gaMeasurementId}', {
-                    page_title: document.title,
-                    page_location: window.location.href,
-                  });
-                `,
-              }}
-            />
-          </>
-        ) : null}
+        {gaMeasurementId && (
+          <script
+            async
+            src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+          />
+        )}
+        {gaMeasurementId && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${gaMeasurementId}');`,
+            }}
+          />
+        )}
       </head>
       <body
         className="antialiased min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary-foreground"
@@ -259,21 +143,7 @@ export default function RootLayout({
                 {children}
               </main>
             </ErrorBoundary>
-            <Script id="sw-register" strategy="afterInteractive">
-              {`
-                if ('serviceWorker' in navigator) {
-                  window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js')
-                      .then(function(registration) {
-                        console.log('SW registered: ', registration);
-                      })
-                      .catch(function(registrationError) {
-                        console.log('SW registration failed: ', registrationError);
-                      });
-                  });
-                }
-              `}
-            </Script>
+
 
           </ThemeProvider>
         </SessionProvider>

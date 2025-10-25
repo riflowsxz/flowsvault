@@ -65,27 +65,6 @@ function DocsContent() {
     window.history.pushState(null, '', `#${sectionId}`);
   };
 
-  const getOnThisPageLinks = () => {
-    switch (activeSection) {
-      case 'overview':
-        return [
-          { id: 'welcome', label: t('docsWelcomeTitle') },
-          { id: 'quickstart', label: t('docsQuickStart') },
-          { id: 'baseurl', label: t('docsBaseUrl') },
-          { id: 'format', label: t('docsResponseFormat') }
-        ];
-      case 'upload':
-        return [
-          { id: 'endpoint', label: t('docsEndpoint') },
-          { id: 'request', label: t('docsRequestBody') },
-          { id: 'examples', label: t('docsCodeExamples') },
-          { id: 'response', label: t('docsSuccessResponse') }
-        ];
-      default:
-        return [];
-    }
-  };
-
   const SidebarNav = ({ onItemClick }: { onItemClick?: () => void }) => (
     <nav className="space-y-0.5">
       {sections.map((section) => {
@@ -111,30 +90,6 @@ function DocsContent() {
       })}
     </nav>
   );
-
-  const OnThisPage = () => {
-    const links = getOnThisPageLinks();
-    if (links.length === 0) return null;
-
-    return (
-      <div className="hidden xl:block w-52 shrink-0 relative z-10">
-        <div className="sticky top-24 space-y-3">
-          <h4 className="text-sm font-semibold text-foreground/80">{t('docsOnThisPage')}</h4>
-          <nav className="space-y-1">
-            {links.map((link) => (
-              <a
-                key={link.id}
-                href={`#${link.id}`}
-                className="block text-sm text-muted-foreground hover:text-primary py-2 px-3 border-l-2 border-transparent hover:border-primary rounded-r-lg hover:bg-primary/5"
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -180,7 +135,7 @@ function DocsContent() {
         </div>
       </header>
 
-      <div className="container max-w-[1600px] mx-auto flex gap-8 xl:gap-12 px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
+      <div className="container max-w-[1800px] mx-auto flex gap-6 lg:gap-8 xl:gap-10 px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         <aside className="hidden lg:block w-52 xl:w-56 shrink-0 relative z-10">
           <div className="sticky top-20 space-y-4 lg:space-y-6">
             <div className="space-y-2 lg:space-y-3 p-4 rounded-2xl bg-muted border border-border">
@@ -195,8 +150,8 @@ function DocsContent() {
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 max-w-[900px] xl:max-w-none">
-          <div className="max-w-none xl:max-w-4xl">
+        <main className="flex-1 min-w-0 w-full">
+          <div className="max-w-5xl mx-auto">
             <div className="prose prose-slate dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-headings:font-bold prose-h1:text-4xl prose-h2:text-2xl prose-h2:border-b prose-h2:pb-3 prose-h2:mt-10 prose-h3:text-xl prose-h3:mt-8 prose-p:leading-7 prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-code:text-primary prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:before:content-none prose-code:after:content-none">
               
               {activeSection === 'overview' && (
@@ -1977,8 +1932,6 @@ X-RateLimit-Reset: 1698156000`}
             </div>
           </div>
         </main>
-
-        <OnThisPage />
       </div>
 
       <footer className="border-t border-border bg-muted/20 mt-12 sm:mt-16 md:mt-20">

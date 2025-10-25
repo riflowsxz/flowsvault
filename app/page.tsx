@@ -34,9 +34,10 @@ function HomePageContent() {
       try {
         const result = await uploadClient.listFiles(1, 100);
         if (result.success && result.data) {
+          const now = Date.now();
           const normalizedFiles: UploadedFile[] = result.data.map((file) => ({
             ...file,
-            isExpired: file.expiresAt ? new Date(file.expiresAt).getTime() <= Date.now() : false,
+            isExpired: file.expiresAt ? new Date(file.expiresAt).getTime() <= now : false,
           }));
           setUploadedFiles(normalizedFiles.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()));
         } else {
@@ -51,24 +52,35 @@ function HomePageContent() {
         });
       }
     }
-  }, [uploadClient, session, status, t]);
+  }, [uploadClient, session?.user?.id, status, t]);
 
   useEffect(() => {
-    fetchAndSetFiles();
-  }, [fetchAndSetFiles]);
+    if (status === 'authenticated') {
+      fetchAndSetFiles();
+    }
+  }, [status, fetchAndSetFiles]);
 
   useEffect(() => {
+    if (uploadedFiles.length === 0) return;
+    
     const interval = setInterval(() => {
-      setUploadedFiles((prev) =>
-        prev.map((file) => {
+      const now = Date.now();
+      setUploadedFiles((prev) => {
+        let hasChanges = false;
+        const updated = prev.map((file) => {
           if (!file.expiresAt) return file;
-          const isExpired = new Date(file.expiresAt).getTime() <= Date.now();
-          return isExpired === file.isExpired ? file : { ...file, isExpired };
-        })
-      );
+          const isExpired = new Date(file.expiresAt).getTime() <= now;
+          if (isExpired !== file.isExpired) {
+            hasChanges = true;
+            return { ...file, isExpired };
+          }
+          return file;
+        });
+        return hasChanges ? updated : prev;
+      });
     }, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [uploadedFiles.length]);
 
   const handleUploadSuccess = (response: { data: FileMetadata; file?: File }) => {
     const { data, file } = response;

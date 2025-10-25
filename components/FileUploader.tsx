@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useId, memo, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useId, memo, useRef, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { UploadCloud, File, X, FileText, FileImage, FileVideo, FileAudio, Check, AlertCircle, Loader2, Pause, Play, RotateCcw } from 'lucide-react';
 import { FileUploadClient, type Duration } from '@/lib/upload-client';
 import { DEFAULT_UPLOAD_DURATION } from '@/lib/upload-durations';
@@ -9,9 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type FileMetadata } from '@/lib/validators';
 import { useSession } from 'next-auth/react';
-import { LoginModal } from '@/components/login-modal';
 import { useLanguage } from '@/lib/i18n/context';
 import NextImage from 'next/image';
+
+const LoginModal = lazy(() => import('@/components/login-modal').then(mod => ({ default: mod.LoginModal })));
 
 const MAX_FILE_SIZE_BYTES = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_SIZE ?? '104857600');
 const MAX_FILE_SIZE_LABEL = `${Math.floor(MAX_FILE_SIZE_BYTES / (1024 * 1024))}MB`;
@@ -74,8 +75,10 @@ export const FileUploader = memo(({ onUploadSuccess, onUploadError, uploadClient
   useEffect(() => {
     const totalFiles = queuedFiles.length;
     if (totalFiles === 0) {
-      setAggregateProgress(0);
-      setEstimatedTimeRemaining(null);
+      if (aggregateProgress !== 0 || estimatedTimeRemaining !== null) {
+        setAggregateProgress(0);
+        setEstimatedTimeRemaining(null);
+      }
       return;
     }
 
@@ -85,8 +88,10 @@ export const FileUploader = memo(({ onUploadSuccess, onUploadError, uploadClient
       return sum;
     }, 0);
 
-    const avgProgress = totalProgress / totalFiles;
-    setAggregateProgress(Math.round(avgProgress));
+    const avgProgress = Math.round(totalProgress / totalFiles);
+    if (avgProgress !== aggregateProgress) {
+      setAggregateProgress(avgProgress);
+    }
 
     const uploadingFiles = queuedFiles.filter(f => f.status === 'uploading' && f.startTime);
     if (uploadingFiles.length > 0) {
@@ -113,41 +118,23 @@ export const FileUploader = memo(({ onUploadSuccess, onUploadError, uploadClient
           return sum + file.file.size;
         }, 0);
 
-        const etaSeconds = remainingBytes / avgSpeed;
-        setEstimatedTimeRemaining(Math.ceil(etaSeconds));
-      } else {
+        const etaSeconds = Math.ceil(remainingBytes / avgSpeed);
+        if (etaSeconds !== estimatedTimeRemaining) {
+          setEstimatedTimeRemaining(etaSeconds);
+        }
+      } else if (estimatedTimeRemaining !== null) {
         setEstimatedTimeRemaining(null);
       }
-    } else {
+    } else if (estimatedTimeRemaining !== null) {
       setEstimatedTimeRemaining(null);
     }
-  }, [queuedFiles]);
+  }, [queuedFiles, aggregateProgress, estimatedTimeRemaining]);
 
-  const createFilePreview = useCallback((file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      if (file.type.startsWith('image/')) {
-        const objectUrl = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => {
-          URL.revokeObjectURL(objectUrl);
-          resolve(URL.createObjectURL(file));
-        };
-        img.onerror = () => {
-          URL.revokeObjectURL(objectUrl);
-          resolve('/file-icon.svg');
-        };
-        img.src = objectUrl;
-      }
-      else if (file.type === 'application/pdf') {
-        resolve('/pdf-icon.svg');
-      }
-      else if (file.type === 'text/plain' || file.type.startsWith('text/')) {
-        resolve('/text-icon.svg');
-      }
-      else {
-        resolve('/file-icon.svg');
-      }
-    });
+  const createFilePreview = useCallback((file: File): string => {
+    if (file.type.startsWith('image/')) {
+      return URL.createObjectURL(file);
+    }
+    return '';
   }, []);
 
   const validateFileType = useCallback((file: File): boolean => {
@@ -156,7 +143,7 @@ export const FileUploader = memo(({ onUploadSuccess, onUploadError, uploadClient
     return ALLOWED_EXTENSIONS.has(extension);
   }, []);
 
-  const addToQueue = useCallback(async (file: File) => {
+  const addToQueue = useCallback((file: File) => {
     if (file.size === 0) {
       onUploadError('File is empty');
       return;
@@ -175,7 +162,7 @@ export const FileUploader = memo(({ onUploadSuccess, onUploadError, uploadClient
     }
 
     const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const previewUrl = await createFilePreview(file);
+    const previewUrl = createFilePreview(file);
     const newQueuedFile: QueuedFile = {
       id: fileId,
       file,
@@ -267,32 +254,47 @@ export const FileUploader = memo(({ onUploadSuccess, onUploadError, uploadClient
   }, []);
 
   const pauseUpload = useCallback((id: string) => {
-    setQueuedFiles(prev => prev.map(file => {
-      if (file.id === id && file.status === 'uploading' && file.abortController) {
-        file.abortController.abort();
-        uploadQueueRef.current.delete(id);
-        return { ...file, status: 'paused', abortController: undefined };
-      }
-      return file;
-    }));
+    setQueuedFiles(prev => {
+      let hasChanges = false;
+      const updated = prev.map(file => {
+        if (file.id === id && file.status === 'uploading' && file.abortController) {
+          file.abortController.abort();
+          uploadQueueRef.current.delete(id);
+          hasChanges = true;
+          return { ...file, status: 'paused' as const, abortController: undefined };
+        }
+        return file;
+      });
+      return hasChanges ? updated : prev;
+    });
   }, []);
 
   const resumeUpload = useCallback((id: string) => {
-    setQueuedFiles(prev => prev.map(file => {
-      if (file.id === id && file.status === 'paused') {
-        return { ...file, status: 'pending', resumeRequested: true };
-      }
-      return file;
-    }));
+    setQueuedFiles(prev => {
+      let hasChanges = false;
+      const updated = prev.map(file => {
+        if (file.id === id && file.status === 'paused') {
+          hasChanges = true;
+          return { ...file, status: 'pending' as const, resumeRequested: true };
+        }
+        return file;
+      });
+      return hasChanges ? updated : prev;
+    });
   }, []);
 
   const retryUpload = useCallback((id: string) => {
-    setQueuedFiles(prev => prev.map(file => {
-      if (file.id === id && file.status === 'error') {
-        return { ...file, status: 'pending', error: undefined, retryCount: 0, retryRequested: true };
-      }
-      return file;
-    }));
+    setQueuedFiles(prev => {
+      let hasChanges = false;
+      const updated = prev.map(file => {
+        if (file.id === id && file.status === 'error') {
+          hasChanges = true;
+          return { ...file, status: 'pending' as const, error: undefined, retryCount: 0, retryRequested: true };
+        }
+        return file;
+      });
+      return hasChanges ? updated : prev;
+    });
   }, []);
 
   const uploadFile = useCallback(async (queuedFile: QueuedFile) => {
@@ -506,7 +508,7 @@ export const FileUploader = memo(({ onUploadSuccess, onUploadError, uploadClient
     return (
       <div
         key={queuedFile.id}
-        className="flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all duration-300 hover:shadow-sm"
+        className="flex flex-col gap-3 rounded-xl border bg-card p-4"
       >
         <div className="flex items-start gap-3">
           {file.type.startsWith('image/') ? (
@@ -630,7 +632,7 @@ export const FileUploader = memo(({ onUploadSuccess, onUploadError, uploadClient
   return (
     <section
       id="upload-panel"
-      className="rounded-2xl border bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-md"
+      className="rounded-2xl border bg-card p-6"
     >
       <div className="space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -690,7 +692,7 @@ export const FileUploader = memo(({ onUploadSuccess, onUploadError, uploadClient
 
           {queuedFiles.length === 0 && (
             <div
-              className={`group relative flex w-full flex-col items-center justify-center gap-6 rounded-xl border-2 border-dashed p-8 text-center transition-all duration-300 ${
+              className={`group relative flex w-full flex-col items-center justify-center gap-6 rounded-xl border-2 border-dashed p-8 text-center ${
                 isDragging
                   ? 'border-primary bg-primary/10 dark:bg-primary/20'
                   : 'border-muted-foreground/30 bg-muted/30 hover:border-muted-foreground/50'
@@ -816,18 +818,22 @@ export const FileUploader = memo(({ onUploadSuccess, onUploadError, uploadClient
         </div>
       </div>
 
-      <LoginModal
-        isOpen={showLoginModal}
-        onClose={() => {
-          setShowLoginModal(false);
-          if (pendingUploadAction) {
-            setPendingUploadAction(null);
-          }
-        }}
-        onLoginSuccess={() => {
-          setShowLoginModal(false);
-        }}
-      />
+      <Suspense fallback={null}>
+        {showLoginModal && (
+          <LoginModal
+            isOpen={showLoginModal}
+            onClose={() => {
+              setShowLoginModal(false);
+              if (pendingUploadAction) {
+                setPendingUploadAction(null);
+              }
+            }}
+            onLoginSuccess={() => {
+              setShowLoginModal(false);
+            }}
+          />
+        )}
+      </Suspense>
     </section>
   );
 });

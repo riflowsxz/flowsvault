@@ -70,6 +70,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const existingKeys = await getApiKeysByUserId(userId);
+    if (existingKeys.length >= 3) {
+      return NextResponse.json(
+        { success: false, error: 'Maximum API key limit reached. You can only have 3 API keys.', code: 'MAX_KEYS_REACHED' },
+        { status: 400 }
+      );
+    }
+
     const { key, prefix } = generateApiKey();
     const hashedKey = await hashApiKey(key);
     const encryptedKey = encryptApiKey(key);
