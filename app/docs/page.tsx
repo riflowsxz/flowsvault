@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Menu, Home, Upload, FileText, Database, Trash, AlertTriangle, Zap } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -23,7 +23,7 @@ function DocsContent() {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || 'https://flowsvault.app';
 
-  const sections = [
+  const sections = useMemo(() => [
     { id: 'overview', label: t('docsOverview'), icon: FileText },
     { id: 'authentication', label: t('docsAuthentication'), icon: Database },
     { id: 'upload', label: t('docsUploadFile'), icon: Upload },
@@ -32,7 +32,7 @@ function DocsContent() {
     { id: 'delete', label: t('docsDeleteFile'), icon: Trash },
     { id: 'errors', label: t('docsErrorHandling'), icon: AlertTriangle },
     { id: 'rate-limits', label: t('docsRateLimits'), icon: Zap },
-  ];
+  ], [t]);
 
   // Initialize active section from URL hash on mount
   useEffect(() => {
@@ -41,7 +41,7 @@ function DocsContent() {
     if (validSection) {
       setActiveSection(hash);
     }
-  }, []);
+  }, [sections]);
 
   // Listen to hash changes
   useEffect(() => {
@@ -57,7 +57,7 @@ function DocsContent() {
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [sections]);
 
   // Update URL hash when active section changes
   const handleSectionChange = (sectionId: string) => {

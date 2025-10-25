@@ -1,7 +1,7 @@
 module.exports = {
   apps: [{
     name: 'flowsvault',
-    script: 'server.js',
+    script: 'server.mjs',
     instances: 1,
     exec_mode: 'fork',
     watch: false,
