@@ -1,0 +1,1 @@
+ALTER TABLE "users" ALTER COLUMN "image" SET DATA TYPE varchar(1024);

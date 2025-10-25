@@ -1,0 +1,19 @@
+{
+  "functions": {
+    "app/api/upload/route.ts": {
+      "maxDuration": 60,
+      "memory": 3008,
+      "maxRequestBodySize": "100mb"
+    },
+    "app/api/download/**/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/admin/cleanup",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

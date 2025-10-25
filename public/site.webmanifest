@@ -1,0 +1,32 @@
+{
+  "name": "Flowsvault - layanan upload file aman",
+  "name": "Flowsvault",
+  "short_name": "Flowsvault",
+  "description": "Layanan upload file.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["utilities", "productivity"],
+  "lang": "id-ID",
+  "dir": "ltr",
+  "orientation": "any",
+  "prefer_related_applications": false
+}

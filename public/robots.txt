@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Google AdsBot
+User-agent: AdsBot-Google
+Allow: /
+
+# Host
+Host: https://app.alyacans.web.id
+
+# Sitemap
+Sitemap: https://app.alyacans.web.id/sitemap.xml
