@@ -29,10 +29,6 @@ Thumbs.db
 .env.test.local
 .env.production.local
 
-# Uploads (jangan masuk ke git)
-QWEN.md
-CLAUDE.md
-
 # VSCode / IDE
 .vscode/
 .idea/

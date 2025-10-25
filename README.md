@@ -141,7 +141,6 @@ Dual authentication strategy:
 - **API Key-based**: Programmatic access for integrations
   - Cryptographically secure key generation (32 bytes)
   - bcrypt hashing for storage
-  - Prefix-based key identification (fv_xxx)
   - Per-key usage tracking
 
 #### 4. **Storage Layer**
@@ -331,7 +330,6 @@ flowsvault/
 ├── package.json                  # NPM dependencies & scripts
 ├── package-lock.json             # NPM lock file
 ├── postcss.config.mjs            # PostCSS configuration
-├── RATE_LIMITING_ENHANCEMENT.md  # Rate limiting documentation
 ├── README.md                     # This file
 ├── server.js                     # Custom Next.js server (for PM2)
 ├── tailwind.config.js            # Tailwind CSS configuration
@@ -918,7 +916,7 @@ For complete API documentation, visit `/docs` when running the application or se
 
 **2. API Key (Programmatic)**:
 ```bash
-curl -H "Authorization: Bearer fv_your_api_key_here" \
+curl -H "Authorization: Bearer your_api_key_here" \
   https://your-domain.com/api/files
 ```
 
@@ -926,7 +924,6 @@ curl -H "Authorization: Bearer fv_your_api_key_here" \
 
 - **README.md** (this file): Quick start and setup guide
 - **[ARCHITECTURE.md](ARCHITECTURE.md)**: Detailed technical architecture
-- **[RATE_LIMITING_ENHANCEMENT.md](RATE_LIMITING_ENHANCEMENT.md)**: Rate limiting implementation details
 - **`/docs` page**: Interactive API documentation with code examples
 
 ## Contributing
