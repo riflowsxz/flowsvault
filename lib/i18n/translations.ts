@@ -178,7 +178,7 @@ export const translations = {
     docsListDesc: 'Retrieve a paginated list of your uploaded files.',
     docsPageParam: 'Page number (default: 1)',
     docsLimitParam: 'Items per page (default: 10, max: 100)',
-    docsDeleteFile: 'Delete File',
+    docsDeleteFile: 'Delete file',
     docsDeleteDesc: 'Permanently delete a file from your storage.',
     docsWarning: 'Warning',
     docsDeleteWarning: 'Deleting a file is permanent and cannot be undone. make sure you have backups if needed.',

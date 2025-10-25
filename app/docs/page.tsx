@@ -378,45 +378,260 @@ function DocsContent() {
                       <TabsTrigger value="curl" className="text-xs sm:text-sm">cURL</TabsTrigger>
                       <TabsTrigger value="javascript" className="text-xs sm:text-sm">JavaScript</TabsTrigger>
                       <TabsTrigger value="python" className="text-xs sm:text-sm">Python</TabsTrigger>
+                      <TabsTrigger value="php" className="text-xs sm:text-sm">PHP</TabsTrigger>
+                      <TabsTrigger value="node" className="text-xs sm:text-sm">Node.js</TabsTrigger>
                     </TabsList>
                       <TabsContent value="curl" className="mt-4">
                         <CodeBlock
                           language="bash"
-                          code={`curl -X POST '${baseUrl}/api/upload' \\
+                          code={`# Basic upload
+curl -X POST '${baseUrl}/api/upload' \\
   -H 'Authorization: Bearer your-api-key-here' \\
   -F 'file=@/path/to/your/file.pdf' \\
-  -F 'expiresIn=7d'`}
+  -F 'expiresIn=7d'
+
+# Upload with expiration time (1 hour)
+curl -X POST '${baseUrl}/api/upload' \\
+  -H 'Authorization: Bearer your-api-key-here' \\
+  -F 'file=@/path/to/your/document.pdf' \\
+  -F 'expiresIn=1h'
+
+# Upload without expiration
+curl -X POST '${baseUrl}/api/upload' \\
+  -H 'Authorization: Bearer your-api-key-here' \\
+  -F 'file=@/path/to/your/image.jpg'`}
                         />
                       </TabsContent>
                       <TabsContent value="javascript" className="mt-4">
                         <CodeBlock
                           language="javascript"
-                          code={`const formData = new FormData();
-formData.append('file', fileInput.files[0]);
-formData.append('expiresIn', '7d');
+                          code={`// Browser upload with error handling
+async function uploadFile(file, expiresIn = '7d') {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('expiresIn', expiresIn);
 
-const response = await fetch('${baseUrl}/api/upload', {
-  method: 'POST',
-  headers: {
-    'Authorization': 'Bearer your-api-key-here'
-  },
-  body: formData
-});
+    const response = await fetch('${baseUrl}/api/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer your-api-key-here'
+      },
+      body: formData
+    });
 
-const data = await response.json();`}
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+
+    const data = await response.json();
+    console.log('File uploaded successfully:', data.data);
+    console.log('Download URL:', data.data.downloadUrl);
+    
+    return data.data;
+  } catch (error) {
+    console.error('Upload error:', error.message);
+    throw error;
+  }
+}
+
+// Usage
+const fileInput = document.querySelector('#fileInput');
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const result = await uploadFile(file, '7d');
+    console.log('Uploaded file ID:', result.id);
+  }
+});`}
                         />
                       </TabsContent>
                       <TabsContent value="python" className="mt-4">
                         <CodeBlock
                           language="python"
                           code={`import requests
+import os
 
-files = {'file': open('file.pdf', 'rb')}
-data = {'expiresIn': '7d'}
-headers = {'Authorization': 'Bearer your-api-key-here'}
+def upload_file(file_path, api_key, expires_in='7d'):
+    """
+    Upload a file to FlowsVault API
+    
+    Args:
+        file_path: Path to the file to upload
+        api_key: Your API key
+        expires_in: Expiration time (e.g., '1h', '7d', '30d')
+    
+    Returns:
+        dict: Upload response data
+    """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+    
+    url = '${baseUrl}/api/upload'
+    headers = {'Authorization': f'Bearer {api_key}'}
+    
+    with open(file_path, 'rb') as f:
+        files = {'file': (os.path.basename(file_path), f)}
+        data = {'expiresIn': expires_in}
+        
+        try:
+            response = requests.post(url, files=files, data=data, headers=headers)
+            response.raise_for_status()
+            
+            result = response.json()
+            if result.get('success'):
+                print(f"File uploaded successfully!")
+                print(f"File ID: {result['data']['id']}")
+                print(f"Download URL: {result['data']['downloadUrl']}")
+                return result['data']
+            else:
+                raise Exception(result.get('error', 'Upload failed'))
+                
+        except requests.exceptions.HTTPError as e:
+            error_msg = e.response.json().get('error', str(e))
+            raise Exception(f"Upload failed: {error_msg}")
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Network error: {str(e)}")
 
-response = requests.post('${baseUrl}/api/upload', 
-                        files=files, data=data, headers=headers)`}
+# Example usage
+if __name__ == '__main__':
+    api_key = 'your-api-key-here'
+    file_path = '/path/to/your/file.pdf'
+    
+    try:
+        result = upload_file(file_path, api_key, expires_in='7d')
+        print(f"Success! File can be accessed at: {result['downloadUrl']}")
+    except Exception as e:
+        print(f"Error: {e}")`}
+                        />
+                      </TabsContent>
+                      <TabsContent value="php" className="mt-4">
+                        <CodeBlock
+                          language="php"
+                          code={`<?php
+function uploadFile($filePath, $apiKey, $expiresIn = '7d') {
+    if (!file_exists($filePath)) {
+        throw new Exception("File not found: $filePath");
+    }
+    
+    $url = '${baseUrl}/api/upload';
+    
+    $curl = curl_init();
+    
+    $postFields = [
+        'file' => new CURLFile($filePath),
+        'expiresIn' => $expiresIn
+    ];
+    
+    curl_setopt_array($curl, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $postFields,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $apiKey
+        ]
+    ]);
+    
+    $response = curl_exec($curl);
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $error = curl_error($curl);
+    
+    curl_close($curl);
+    
+    if ($error) {
+        throw new Exception("cURL error: $error");
+    }
+    
+    $data = json_decode($response, true);
+    
+    if ($httpCode >= 400) {
+        $errorMsg = $data['error'] ?? 'Upload failed';
+        throw new Exception("Upload failed: $errorMsg");
+    }
+    
+    if ($data['success']) {
+        echo "File uploaded successfully!\\n";
+        echo "File ID: " . $data['data']['id'] . "\\n";
+        echo "Download URL: " . $data['data']['downloadUrl'] . "\\n";
+        return $data['data'];
+    }
+    
+    throw new Exception($data['error'] ?? 'Unknown error');
+}
+
+// Usage
+try {
+    $apiKey = 'your-api-key-here';
+    $filePath = '/path/to/your/file.pdf';
+    
+    $result = uploadFile($filePath, $apiKey, '7d');
+    echo "Success! File ID: " . $result['id'];
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}
+?>`}
+                        />
+                      </TabsContent>
+                      <TabsContent value="node" className="mt-4">
+                        <CodeBlock
+                          language="javascript"
+                          code={`// Node.js upload with axios and form-data
+const axios = require('axios');
+const FormData = require('form-data');
+const fs = require('fs');
+const path = require('path');
+
+async function uploadFile(filePath, apiKey, expiresIn = '7d') {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(\`File not found: \${filePath}\`);
+  }
+
+  const form = new FormData();
+  form.append('file', fs.createReadStream(filePath));
+  form.append('expiresIn', expiresIn);
+
+  try {
+    const response = await axios.post('${baseUrl}/api/upload', form, {
+      headers: {
+        ...form.getHeaders(),
+        'Authorization': \`Bearer \${apiKey}\`
+      },
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity
+    });
+
+    if (response.data.success) {
+      console.log('File uploaded successfully!');
+      console.log('File ID:', response.data.data.id);
+      console.log('Download URL:', response.data.data.downloadUrl);
+      return response.data.data;
+    }
+
+    throw new Error(response.data.error || 'Upload failed');
+  } catch (error) {
+    if (error.response) {
+      const errorMsg = error.response.data?.error || error.message;
+      throw new Error(\`Upload failed: \${errorMsg}\`);
+    }
+    throw new Error(\`Network error: \${error.message}\`);
+  }
+}
+
+// Example usage
+(async () => {
+  try {
+    const apiKey = 'your-api-key-here';
+    const filePath = '/path/to/your/file.pdf';
+    
+    const result = await uploadFile(filePath, apiKey, '7d');
+    console.log(\`Success! File can be accessed at: \${result.downloadUrl}\`);
+  } catch (error) {
+    console.error('Error:', error.message);
+    process.exit(1);
+  }
+})();`}
                         />
                       </TabsContent>
                     </Tabs>
@@ -464,36 +679,314 @@ response = requests.post('${baseUrl}/api/upload',
                       <TabsTrigger value="curl" className="text-xs sm:text-sm">cURL</TabsTrigger>
                       <TabsTrigger value="javascript" className="text-xs sm:text-sm">JavaScript</TabsTrigger>
                       <TabsTrigger value="python" className="text-xs sm:text-sm">Python</TabsTrigger>
+                      <TabsTrigger value="php" className="text-xs sm:text-sm">PHP</TabsTrigger>
+                      <TabsTrigger value="node" className="text-xs sm:text-sm">Node.js</TabsTrigger>
                     </TabsList>
                     <TabsContent value="curl" className="mt-4">
                       <CodeBlock
                         language="bash"
-                        code={`curl -X GET '${baseUrl}/api/download/file_abc123xyz' \\
+                        code={`# Download file to specific path
+curl -X GET '${baseUrl}/api/download/file_abc123xyz' \\
   -H 'Authorization: Bearer your-api-key-here' \\
-  --output file.pdf`}
+  --output file.pdf
+
+# Download with verbose output
+curl -X GET '${baseUrl}/api/download/file_abc123xyz' \\
+  -H 'Authorization: Bearer your-api-key-here' \\
+  --output downloaded_file.pdf \\
+  -v
+
+# Download and show progress
+curl -X GET '${baseUrl}/api/download/file_abc123xyz' \\
+  -H 'Authorization: Bearer your-api-key-here' \\
+  --output file.pdf \\
+  --progress-bar`}
                       />
                     </TabsContent>
                     <TabsContent value="javascript" className="mt-4">
                       <CodeBlock
                         language="javascript"
-                        code={`const response = await fetch('${baseUrl}/api/download/file_abc123xyz', {
-  headers: {
-    'Authorization': 'Bearer your-api-key-here'
+                        code={`// Browser download with proper error handling
+async function downloadFile(fileId, apiKey) {
+  try {
+    const response = await fetch(\`${baseUrl}/api/download/\${fileId}\`, {
+      headers: {
+        'Authorization': \`Bearer \${apiKey}\`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Download failed');
+    }
+
+    // Get filename from Content-Disposition header
+    const contentDisposition = response.headers.get('Content-Disposition');
+    const filename = contentDisposition
+      ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+      : 'downloaded_file';
+
+    // Create blob and download
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Cleanup
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    console.log('File downloaded successfully:', filename);
+  } catch (error) {
+    console.error('Download error:', error.message);
+    throw error;
   }
-});
-const blob = await response.blob();
-// Handle download`}
+}
+
+// Usage
+downloadFile('file_abc123xyz', 'your-api-key-here')
+  .then(() => console.log('Download complete'))
+  .catch(err => console.error('Failed:', err));`}
                       />
                     </TabsContent>
                     <TabsContent value="python" className="mt-4">
                       <CodeBlock
                         language="python"
                         code={`import requests
+import os
+from pathlib import Path
 
-headers = {'Authorization': 'Bearer your-api-key-here'}
-response = requests.get('${baseUrl}/api/download/file_abc123xyz', headers=headers)
-with open('file.pdf', 'wb') as f:
-    f.write(response.content)`}
+def download_file(file_id, api_key, output_path=None):
+    """
+    Download a file from FlowsVault API
+    
+    Args:
+        file_id: ID of the file to download
+        api_key: Your API key
+        output_path: Optional path to save the file
+    
+    Returns:
+        str: Path to the downloaded file
+    """
+    url = f'${baseUrl}/api/download/{file_id}'
+    headers = {'Authorization': f'Bearer {api_key}'}
+    
+    try:
+        response = requests.get(url, headers=headers, stream=True)
+        response.raise_for_status()
+        
+        # Get filename from Content-Disposition header
+        content_disposition = response.headers.get('Content-Disposition', '')
+        if 'filename=' in content_disposition:
+            filename = content_disposition.split('filename=')[1].strip('"')
+        else:
+            filename = f'{file_id}_downloaded'
+        
+        # Use provided path or current directory
+        if output_path:
+            filepath = Path(output_path)
+        else:
+            filepath = Path(filename)
+        
+        # Download with progress
+        total_size = int(response.headers.get('content-length', 0))
+        downloaded = 0
+        
+        with open(filepath, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if total_size:
+                        percent = (downloaded / total_size) * 100
+                        print(f'\\rDownloading: {percent:.1f}%', end='')
+        
+        print(f'\\nFile downloaded successfully: {filepath}')
+        return str(filepath)
+        
+    except requests.exceptions.HTTPError as e:
+        error_msg = 'Unknown error'
+        try:
+            error_data = e.response.json()
+            error_msg = error_data.get('error', str(e))
+        except:
+            error_msg = str(e)
+        raise Exception(f"Download failed: {error_msg}")
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Network error: {str(e)}")
+
+# Example usage
+if __name__ == '__main__':
+    api_key = 'your-api-key-here'
+    file_id = 'file_abc123xyz'
+    
+    try:
+        filepath = download_file(file_id, api_key, 'downloaded_file.pdf')
+        print(f"Success! File saved to: {filepath}")
+    except Exception as e:
+        print(f"Error: {e}")`}
+                      />
+                    </TabsContent>
+                    <TabsContent value="php" className="mt-4">
+                      <CodeBlock
+                        language="php"
+                        code={`<?php
+function downloadFile($fileId, $apiKey, $outputPath = null) {
+    $url = '${baseUrl}/api/download/' . $fileId;
+    
+    $curl = curl_init();
+    
+    curl_setopt_array($curl, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $apiKey
+        ],
+        CURLOPT_HEADERFUNCTION => function($curl, $header) use (&$filename) {
+            if (stripos($header, 'Content-Disposition:') !== false) {
+                preg_match('/filename="([^"]+)"/', $header, $matches);
+                if (isset($matches[1])) {
+                    $filename = $matches[1];
+                }
+            }
+            return strlen($header);
+        }
+    ]);
+    
+    $response = curl_exec($curl);
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $error = curl_error($curl);
+    
+    curl_close($curl);
+    
+    if ($error) {
+        throw new Exception("cURL error: $error");
+    }
+    
+    if ($httpCode >= 400) {
+        $errorData = json_decode($response, true);
+        $errorMsg = $errorData['error'] ?? 'Download failed';
+        throw new Exception("Download failed: $errorMsg");
+    }
+    
+    // Determine output filename
+    if ($outputPath) {
+        $filepath = $outputPath;
+    } elseif (isset($filename)) {
+        $filepath = $filename;
+    } else {
+        $filepath = $fileId . '_downloaded';
+    }
+    
+    // Save file
+    $bytesWritten = file_put_contents($filepath, $response);
+    
+    if ($bytesWritten === false) {
+        throw new Exception("Failed to write file: $filepath");
+    }
+    
+    echo "File downloaded successfully: $filepath\\n";
+    echo "Size: " . number_format($bytesWritten) . " bytes\\n";
+    
+    return $filepath;
+}
+
+// Usage
+try {
+    $apiKey = 'your-api-key-here';
+    $fileId = 'file_abc123xyz';
+    
+    $filepath = downloadFile($fileId, $apiKey, 'downloaded_file.pdf');
+    echo "Success! File saved to: $filepath";
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}
+?>`}
+                      />
+                    </TabsContent>
+                    <TabsContent value="node" className="mt-4">
+                      <CodeBlock
+                        language="javascript"
+                        code={`// Node.js download with axios
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+
+async function downloadFile(fileId, apiKey, outputPath = null) {
+  const url = \`${baseUrl}/api/download/\${fileId}\`;
+
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        'Authorization': \`Bearer \${apiKey}\`
+      },
+      responseType: 'stream'
+    });
+
+    // Get filename from Content-Disposition header
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = \`\${fileId}_downloaded\`;
+    
+    if (contentDisposition && contentDisposition.includes('filename=')) {
+      filename = contentDisposition
+        .split('filename=')[1]
+        .replace(/"/g, '');
+    }
+
+    // Use provided path or default filename
+    const filepath = outputPath || filename;
+
+    // Create write stream
+    const writer = fs.createWriteStream(filepath);
+
+    // Track progress
+    const totalLength = response.headers['content-length'];
+    let downloadedLength = 0;
+
+    response.data.on('data', (chunk) => {
+      downloadedLength += chunk.length;
+      if (totalLength) {
+        const percent = (downloadedLength / totalLength * 100).toFixed(1);
+        process.stdout.write(\`\\rDownloading: \${percent}%\`);
+      }
+    });
+
+    response.data.pipe(writer);
+
+    return new Promise((resolve, reject) => {
+      writer.on('finish', () => {
+        console.log(\`\\nFile downloaded successfully: \${filepath}\`);
+        resolve(filepath);
+      });
+      writer.on('error', reject);
+    });
+
+  } catch (error) {
+    if (error.response) {
+      const errorMsg = error.response.data?.error || error.message;
+      throw new Error(\`Download failed: \${errorMsg}\`);
+    }
+    throw new Error(\`Network error: \${error.message}\`);
+  }
+}
+
+// Example usage
+(async () => {
+  try {
+    const apiKey = 'your-api-key-here';
+    const fileId = 'file_abc123xyz';
+    
+    const filepath = await downloadFile(fileId, apiKey, 'downloaded_file.pdf');
+    console.log(\`Success! File saved to: \${filepath}\`);
+  } catch (error) {
+    console.error('Error:', error.message);
+    process.exit(1);
+  }
+})();`}
                       />
                     </TabsContent>
                   </Tabs>
@@ -547,33 +1040,338 @@ with open('file.pdf', 'wb') as f:
                       <TabsTrigger value="curl" className="text-xs sm:text-sm">cURL</TabsTrigger>
                       <TabsTrigger value="javascript" className="text-xs sm:text-sm">JavaScript</TabsTrigger>
                       <TabsTrigger value="python" className="text-xs sm:text-sm">Python</TabsTrigger>
+                      <TabsTrigger value="php" className="text-xs sm:text-sm">PHP</TabsTrigger>
+                      <TabsTrigger value="node" className="text-xs sm:text-sm">Node.js</TabsTrigger>
                     </TabsList>
                     <TabsContent value="curl" className="mt-4">
                       <CodeBlock
                         language="bash"
-                        code={`curl -X GET '${baseUrl}/api/files?page=1&limit=10' \\
+                        code={`# List first 10 files
+curl -X GET '${baseUrl}/api/files?page=1&limit=10' \\
+  -H 'Authorization: Bearer your-api-key-here'
+
+# List with different page size
+curl -X GET '${baseUrl}/api/files?page=2&limit=20' \\
+  -H 'Authorization: Bearer your-api-key-here'
+
+# Get all files (default pagination)
+curl -X GET '${baseUrl}/api/files' \\
   -H 'Authorization: Bearer your-api-key-here'`}
                       />
                     </TabsContent>
                     <TabsContent value="javascript" className="mt-4">
                       <CodeBlock
                         language="javascript"
-                        code={`const response = await fetch('${baseUrl}/api/files?page=1&limit=10', {
-  headers: {
-    'Authorization': 'Bearer your-api-key-here'
+                        code={`// Browser list files with pagination
+async function listFiles(apiKey, page = 1, limit = 10) {
+  try {
+    const url = new URL('${baseUrl}/api/files');
+    url.searchParams.append('page', page);
+    url.searchParams.append('limit', limit);
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': \`Bearer \${apiKey}\`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to list files');
+    }
+
+    const data = await response.json();
+    
+    if (data.success) {
+      console.log(\`Total files: \${data.data.total}\`);
+      console.log(\`Page \${data.data.page} of \${data.data.totalPages}\`);
+      console.log(\`Files on this page: \${data.data.files.length}\`);
+      
+      data.data.files.forEach((file, index) => {
+        console.log(\`\${index + 1}. \${file.originalName} (\${file.size} bytes)\`);
+        console.log(\`   ID: \${file.id}\`);
+        console.log(\`   Download: \${file.downloadUrl}\`);
+      });
+      
+      return data.data;
+    }
+    
+    throw new Error('Unexpected response format');
+  } catch (error) {
+    console.error('List files error:', error.message);
+    throw error;
   }
-});
-const data = await response.json();`}
+}
+
+// Usage - Get all pages
+async function getAllFiles(apiKey) {
+  let allFiles = [];
+  let page = 1;
+  let hasMore = true;
+  
+  while (hasMore) {
+    const result = await listFiles(apiKey, page, 50);
+    allFiles = allFiles.concat(result.files);
+    hasMore = page < result.totalPages;
+    page++;
+  }
+  
+  return allFiles;
+}
+
+// Example
+listFiles('your-api-key-here', 1, 10)
+  .then(data => console.log('Files retrieved:', data.files.length))
+  .catch(err => console.error('Failed:', err));`}
                       />
                     </TabsContent>
                     <TabsContent value="python" className="mt-4">
                       <CodeBlock
                         language="python"
                         code={`import requests
+from typing import List, Dict
 
-params = {'page': 1, 'limit': 10}
-headers = {'Authorization': 'Bearer your-api-key-here'}
-response = requests.get('${baseUrl}/api/files', params=params, headers=headers)`}
+def list_files(api_key, page=1, limit=10):
+    """
+    List files from FlowsVault API with pagination
+    
+    Args:
+        api_key: Your API key
+        page: Page number (default: 1)
+        limit: Files per page (default: 10)
+    
+    Returns:
+        dict: Files data with pagination info
+    """
+    url = '${baseUrl}/api/files'
+    headers = {'Authorization': f'Bearer {api_key}'}
+    params = {'page': page, 'limit': limit}
+    
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if data.get('success'):
+            result = data['data']
+            print(f"Total files: {result['total']}")
+            print(f"Page {result['page']} of {result['totalPages']}")
+            print(f"Files on this page: {len(result['files'])}")
+            print()
+            
+            for i, file in enumerate(result['files'], 1):
+                print(f"{i}. {file['originalName']} ({file['size']} bytes)")
+                print(f"   ID: {file['id']}")
+                print(f"   Type: {file['mimeType']}")
+                print(f"   Download: {file['downloadUrl']}")
+                print()
+            
+            return result
+        else:
+            raise Exception(data.get('error', 'Failed to list files'))
+            
+    except requests.exceptions.HTTPError as e:
+        error_msg = e.response.json().get('error', str(e))
+        raise Exception(f"List files failed: {error_msg}")
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Network error: {str(e)}")
+
+def get_all_files(api_key) -> List[Dict]:
+    """Get all files by iterating through all pages"""
+    all_files = []
+    page = 1
+    
+    while True:
+        result = list_files(api_key, page, 50)
+        all_files.extend(result['files'])
+        
+        if page >= result['totalPages']:
+            break
+        
+        page += 1
+    
+    return all_files
+
+# Example usage
+if __name__ == '__main__':
+    api_key = 'your-api-key-here'
+    
+    try:
+        # List first page
+        files_data = list_files(api_key, page=1, limit=10)
+        print(f"Retrieved {len(files_data['files'])} files")
+        
+        # Get all files
+        # all_files = get_all_files(api_key)
+        # print(f"Total files in account: {len(all_files)}")
+    except Exception as e:
+        print(f"Error: {e}")`}
+                      />
+                    </TabsContent>
+                    <TabsContent value="php" className="mt-4">
+                      <CodeBlock
+                        language="php"
+                        code={`<?php
+function listFiles($apiKey, $page = 1, $limit = 10) {
+    $url = '${baseUrl}/api/files?' . http_build_query([
+        'page' => $page,
+        'limit' => $limit
+    ]);
+    
+    $curl = curl_init();
+    
+    curl_setopt_array($curl, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $apiKey
+        ]
+    ]);
+    
+    $response = curl_exec($curl);
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $error = curl_error($curl);
+    
+    curl_close($curl);
+    
+    if ($error) {
+        throw new Exception("cURL error: $error");
+    }
+    
+    $data = json_decode($response, true);
+    
+    if ($httpCode >= 400) {
+        $errorMsg = $data['error'] ?? 'List files failed';
+        throw new Exception("List files failed: $errorMsg");
+    }
+    
+    if ($data['success']) {
+        $result = $data['data'];
+        
+        echo "Total files: " . $result['total'] . "\\n";
+        echo "Page " . $result['page'] . " of " . $result['totalPages'] . "\\n";
+        echo "Files on this page: " . count($result['files']) . "\\n\\n";
+        
+        foreach ($result['files'] as $index => $file) {
+            echo ($index + 1) . ". " . $file['originalName'] . " (" . $file['size'] . " bytes)\\n";
+            echo "   ID: " . $file['id'] . "\\n";
+            echo "   Type: " . $file['mimeType'] . "\\n";
+            echo "   Download: " . $file['downloadUrl'] . "\\n\\n";
+        }
+        
+        return $result;
+    }
+    
+    throw new Exception($data['error'] ?? 'Unknown error');
+}
+
+function getAllFiles($apiKey) {
+    $allFiles = [];
+    $page = 1;
+    
+    do {
+        $result = listFiles($apiKey, $page, 50);
+        $allFiles = array_merge($allFiles, $result['files']);
+        $page++;
+    } while ($page <= $result['totalPages']);
+    
+    return $allFiles;
+}
+
+// Usage
+try {
+    $apiKey = 'your-api-key-here';
+    
+    // List first page
+    $filesData = listFiles($apiKey, 1, 10);
+    echo "Retrieved " . count($filesData['files']) . " files";
+    
+    // Get all files
+    // $allFiles = getAllFiles($apiKey);
+    // echo "Total files in account: " . count($allFiles);
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}
+?>`}
+                      />
+                    </TabsContent>
+                    <TabsContent value="node" className="mt-4">
+                      <CodeBlock
+                        language="javascript"
+                        code={`// Node.js list files with axios
+const axios = require('axios');
+
+async function listFiles(apiKey, page = 1, limit = 10) {
+  try {
+    const response = await axios.get('${baseUrl}/api/files', {
+      headers: {
+        'Authorization': \`Bearer \${apiKey}\`
+      },
+      params: { page, limit }
+    });
+
+    if (response.data.success) {
+      const result = response.data.data;
+      
+      console.log(\`Total files: \${result.total}\`);
+      console.log(\`Page \${result.page} of \${result.totalPages}\`);
+      console.log(\`Files on this page: \${result.files.length}\`);
+      console.log();
+      
+      result.files.forEach((file, index) => {
+        console.log(\`\${index + 1}. \${file.originalName} (\${file.size} bytes)\`);
+        console.log(\`   ID: \${file.id}\`);
+        console.log(\`   Type: \${file.mimeType}\`);
+        console.log(\`   Download: \${file.downloadUrl}\`);
+        console.log();
+      });
+      
+      return result;
+    }
+    
+    throw new Error(response.data.error || 'Failed to list files');
+  } catch (error) {
+    if (error.response) {
+      const errorMsg = error.response.data?.error || error.message;
+      throw new Error(\`List files failed: \${errorMsg}\`);
+    }
+    throw new Error(\`Network error: \${error.message}\`);
+  }
+}
+
+async function getAllFiles(apiKey) {
+  const allFiles = [];
+  let page = 1;
+  let totalPages = 1;
+  
+  do {
+    const result = await listFiles(apiKey, page, 50);
+    allFiles.push(...result.files);
+    totalPages = result.totalPages;
+    page++;
+  } while (page <= totalPages);
+  
+  return allFiles;
+}
+
+// Example usage
+(async () => {
+  try {
+    const apiKey = 'your-api-key-here';
+    
+    // List first page
+    const filesData = await listFiles(apiKey, 1, 10);
+    console.log(\`Retrieved \${filesData.files.length} files\`);
+    
+    // Get all files
+    // const allFiles = await getAllFiles(apiKey);
+    // console.log(\`Total files in account: \${allFiles.length}\`);
+  } catch (error) {
+    console.error('Error:', error.message);
+    process.exit(1);
+  }
+})();`}
                       />
                     </TabsContent>
                   </Tabs>
@@ -603,32 +1401,411 @@ response = requests.get('${baseUrl}/api/files', params=params, headers=headers)`
                       <TabsTrigger value="curl" className="text-xs sm:text-sm">cURL</TabsTrigger>
                       <TabsTrigger value="javascript" className="text-xs sm:text-sm">JavaScript</TabsTrigger>
                       <TabsTrigger value="python" className="text-xs sm:text-sm">Python</TabsTrigger>
+                      <TabsTrigger value="php" className="text-xs sm:text-sm">PHP</TabsTrigger>
+                      <TabsTrigger value="node" className="text-xs sm:text-sm">Node.js</TabsTrigger>
                     </TabsList>
                     <TabsContent value="curl" className="mt-4">
                       <CodeBlock
                         language="bash"
-                        code={`curl -X DELETE '${baseUrl}/api/files/file_abc123xyz' \\
-  -H 'Authorization: Bearer your-api-key-here'`}
+                        code={`# Delete a single file
+curl -X DELETE '${baseUrl}/api/files/file_abc123xyz' \\
+  -H 'Authorization: Bearer your-api-key-here'
+
+# Delete with verbose output
+curl -X DELETE '${baseUrl}/api/files/file_abc123xyz' \\
+  -H 'Authorization: Bearer your-api-key-here' \\
+  -v
+
+# Delete and show response
+curl -X DELETE '${baseUrl}/api/files/file_abc123xyz' \\
+  -H 'Authorization: Bearer your-api-key-here' \\
+  -i`}
                       />
                     </TabsContent>
                     <TabsContent value="javascript" className="mt-4">
                       <CodeBlock
                         language="javascript"
-                        code={`const response = await fetch('${baseUrl}/api/files/file_abc123xyz', {
-  method: 'DELETE',
-  headers: {
-    'Authorization': 'Bearer your-api-key-here'
+                        code={`// Browser delete with confirmation and error handling
+async function deleteFile(fileId, apiKey) {
+  try {
+    const response = await fetch(\`${baseUrl}/api/files/\${fileId}\`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': \`Bearer \${apiKey}\`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Delete failed');
+    }
+
+    const data = await response.json();
+    
+    if (data.success) {
+      console.log('File deleted successfully:', fileId);
+      return true;
+    }
+    
+    throw new Error(data.error || 'Unexpected response');
+  } catch (error) {
+    console.error('Delete error:', error.message);
+    throw error;
   }
-});`}
+}
+
+// Delete with user confirmation
+async function deleteFileWithConfirmation(fileId, fileName, apiKey) {
+  const confirmed = confirm(\`Are you sure you want to delete "\${fileName}"? This action cannot be undone.\`);
+  
+  if (!confirmed) {
+    console.log('Delete cancelled by user');
+    return false;
+  }
+  
+  try {
+    await deleteFile(fileId, apiKey);
+    console.log('File deleted successfully');
+    return true;
+  } catch (error) {
+    alert(\`Failed to delete file: \${error.message}\`);
+    return false;
+  }
+}
+
+// Bulk delete multiple files
+async function deleteMultipleFiles(fileIds, apiKey) {
+  const results = {
+    success: [],
+    failed: []
+  };
+  
+  for (const fileId of fileIds) {
+    try {
+      await deleteFile(fileId, apiKey);
+      results.success.push(fileId);
+    } catch (error) {
+      results.failed.push({ fileId, error: error.message });
+    }
+  }
+  
+  console.log(\`Deleted: \${results.success.length}, Failed: \${results.failed.length}\`);
+  return results;
+}
+
+// Example usage
+deleteFile('file_abc123xyz', 'your-api-key-here')
+  .then(() => console.log('Delete complete'))
+  .catch(err => console.error('Failed:', err));`}
                       />
                     </TabsContent>
                     <TabsContent value="python" className="mt-4">
                       <CodeBlock
                         language="python"
                         code={`import requests
+from typing import List, Dict
 
-headers = {'Authorization': 'Bearer your-api-key-here'}
-response = requests.delete('${baseUrl}/api/files/file_abc123xyz', headers=headers)`}
+def delete_file(file_id, api_key):
+    """
+    Delete a file from FlowsVault API
+    
+    Args:
+        file_id: ID of the file to delete
+        api_key: Your API key
+    
+    Returns:
+        bool: True if deletion was successful
+    """
+    url = f'${baseUrl}/api/files/{file_id}'
+    headers = {'Authorization': f'Bearer {api_key}'}
+    
+    try:
+        response = requests.delete(url, headers=headers)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if data.get('success'):
+            print(f"File {file_id} deleted successfully")
+            return True
+        else:
+            raise Exception(data.get('error', 'Delete failed'))
+            
+    except requests.exceptions.HTTPError as e:
+        error_msg = 'Unknown error'
+        try:
+            error_data = e.response.json()
+            error_msg = error_data.get('error', str(e))
+        except:
+            error_msg = str(e)
+        raise Exception(f"Delete failed: {error_msg}")
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Network error: {str(e)}")
+
+def delete_file_with_confirmation(file_id, file_name, api_key):
+    """Delete file with user confirmation"""
+    confirm = input(f'Are you sure you want to delete "{file_name}"? (yes/no): ')
+    
+    if confirm.lower() != 'yes':
+        print('Delete cancelled by user')
+        return False
+    
+    try:
+        delete_file(file_id, api_key)
+        print('File deleted successfully')
+        return True
+    except Exception as e:
+        print(f"Failed to delete file: {e}")
+        return False
+
+def delete_multiple_files(file_ids: List[str], api_key) -> Dict:
+    """
+    Delete multiple files
+    
+    Args:
+        file_ids: List of file IDs to delete
+        api_key: Your API key
+    
+    Returns:
+        dict: Results with success and failed lists
+    """
+    results = {
+        'success': [],
+        'failed': []
+    }
+    
+    for file_id in file_ids:
+        try:
+            delete_file(file_id, api_key)
+            results['success'].append(file_id)
+        except Exception as e:
+            results['failed'].append({
+                'file_id': file_id,
+                'error': str(e)
+            })
+    
+    print(f"Deleted: {len(results['success'])}, Failed: {len(results['failed'])}")
+    return results
+
+# Example usage
+if __name__ == '__main__':
+    api_key = 'your-api-key-here'
+    file_id = 'file_abc123xyz'
+    
+    try:
+        # Single file delete
+        delete_file(file_id, api_key)
+        print("Delete complete")
+        
+        # Multiple files delete
+        # file_ids = ['file_id1', 'file_id2', 'file_id3']
+        # results = delete_multiple_files(file_ids, api_key)
+        # print(f"Results: {results}")
+    except Exception as e:
+        print(f"Error: {e}")`}
+                      />
+                    </TabsContent>
+                    <TabsContent value="php" className="mt-4">
+                      <CodeBlock
+                        language="php"
+                        code={`<?php
+function deleteFile($fileId, $apiKey) {
+    $url = '${baseUrl}/api/files/' . $fileId;
+    
+    $curl = curl_init();
+    
+    curl_setopt_array($curl, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CUSTOMREQUEST => 'DELETE',
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $apiKey
+        ]
+    ]);
+    
+    $response = curl_exec($curl);
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $error = curl_error($curl);
+    
+    curl_close($curl);
+    
+    if ($error) {
+        throw new Exception("cURL error: $error");
+    }
+    
+    $data = json_decode($response, true);
+    
+    if ($httpCode >= 400) {
+        $errorMsg = $data['error'] ?? 'Delete failed';
+        throw new Exception("Delete failed: $errorMsg");
+    }
+    
+    if ($data['success']) {
+        echo "File $fileId deleted successfully\\n";
+        return true;
+    }
+    
+    throw new Exception($data['error'] ?? 'Unknown error');
+}
+
+function deleteFileWithConfirmation($fileId, $fileName, $apiKey) {
+    echo "Are you sure you want to delete \\"$fileName\\"? (yes/no): ";
+    $confirm = trim(fgets(STDIN));
+    
+    if (strtolower($confirm) !== 'yes') {
+        echo "Delete cancelled by user\\n";
+        return false;
+    }
+    
+    try {
+        deleteFile($fileId, $apiKey);
+        echo "File deleted successfully\\n";
+        return true;
+    } catch (Exception $e) {
+        echo "Failed to delete file: " . $e->getMessage() . "\\n";
+        return false;
+    }
+}
+
+function deleteMultipleFiles($fileIds, $apiKey) {
+    $results = [
+        'success' => [],
+        'failed' => []
+    ];
+    
+    foreach ($fileIds as $fileId) {
+        try {
+            deleteFile($fileId, $apiKey);
+            $results['success'][] = $fileId;
+        } catch (Exception $e) {
+            $results['failed'][] = [
+                'file_id' => $fileId,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
+    echo "Deleted: " . count($results['success']) . ", Failed: " . count($results['failed']) . "\\n";
+    return $results;
+}
+
+// Usage
+try {
+    $apiKey = 'your-api-key-here';
+    $fileId = 'file_abc123xyz';
+    
+    // Single file delete
+    deleteFile($fileId, $apiKey);
+    echo "Delete complete";
+    
+    // Multiple files delete
+    // $fileIds = ['file_id1', 'file_id2', 'file_id3'];
+    // $results = deleteMultipleFiles($fileIds, $apiKey);
+    // print_r($results);
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}
+?>`}
+                      />
+                    </TabsContent>
+                    <TabsContent value="node" className="mt-4">
+                      <CodeBlock
+                        language="javascript"
+                        code={`// Node.js delete with axios
+const axios = require('axios');
+
+async function deleteFile(fileId, apiKey) {
+  try {
+    const response = await axios.delete(\`${baseUrl}/api/files/\${fileId}\`, {
+      headers: {
+        'Authorization': \`Bearer \${apiKey}\`
+      }
+    });
+
+    if (response.data.success) {
+      console.log(\`File \${fileId} deleted successfully\`);
+      return true;
+    }
+    
+    throw new Error(response.data.error || 'Delete failed');
+  } catch (error) {
+    if (error.response) {
+      const errorMsg = error.response.data?.error || error.message;
+      throw new Error(\`Delete failed: \${errorMsg}\`);
+    }
+    throw new Error(\`Network error: \${error.message}\`);
+  }
+}
+
+async function deleteFileWithConfirmation(fileId, fileName, apiKey) {
+  const readline = require('readline').createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  return new Promise((resolve) => {
+    readline.question(\`Are you sure you want to delete "\${fileName}"? (yes/no): \`, async (answer) => {
+      readline.close();
+      
+      if (answer.toLowerCase() !== 'yes') {
+        console.log('Delete cancelled by user');
+        resolve(false);
+        return;
+      }
+      
+      try {
+        await deleteFile(fileId, apiKey);
+        console.log('File deleted successfully');
+        resolve(true);
+      } catch (error) {
+        console.error(\`Failed to delete file: \${error.message}\`);
+        resolve(false);
+      }
+    });
+  });
+}
+
+async function deleteMultipleFiles(fileIds, apiKey) {
+  const results = {
+    success: [],
+    failed: []
+  };
+  
+  for (const fileId of fileIds) {
+    try {
+      await deleteFile(fileId, apiKey);
+      results.success.push(fileId);
+    } catch (error) {
+      results.failed.push({
+        fileId,
+        error: error.message
+      });
+    }
+  }
+  
+  console.log(\`Deleted: \${results.success.length}, Failed: \${results.failed.length}\`);
+  return results;
+}
+
+// Example usage
+(async () => {
+  try {
+    const apiKey = 'your-api-key-here';
+    const fileId = 'file_abc123xyz';
+    
+    // Single file delete
+    await deleteFile(fileId, apiKey);
+    console.log('Delete complete');
+    
+    // Multiple files delete
+    // const fileIds = ['file_id1', 'file_id2', 'file_id3'];
+    // const results = await deleteMultipleFiles(fileIds, apiKey);
+    // console.log('Results:', results);
+  } catch (error) {
+    console.error('Error:', error.message);
+    process.exit(1);
+  }
+})();`}
                       />
                     </TabsContent>
                   </Tabs>
