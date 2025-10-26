@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Key, Trash2, Copy, AlertTriangle, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Key, Trash2, Copy, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/context';
 
 interface ApiKey {
@@ -262,7 +262,7 @@ export function ApiKeysModal({ open, onOpenChange }: ApiKeysModalProps) {
                   </div>
                 ) : (
                 <div className="space-y-2">
-                  {apiKeys.map((key, index) => (
+                  {apiKeys.map((key) => (
                     <div
                       key={key.id}
                       className="p-3 border rounded-lg bg-card/50 hover:bg-card"
